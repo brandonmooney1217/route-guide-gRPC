@@ -3,18 +3,19 @@ syntax = "proto3";
 package routeguide;
 option go_package = "routeguide/routeguide";
 
-
+// RouteGuide service provides geographical feature lookup functionality
 service RouteGuide {
-// Obtains feature at a given point
     rpc GetFeature(Point) returns (Feature) {}
 }
 
+// Point represents a geographical coordinate pair
 message Point {
-    int32 latitude = 1;
+    int32 latitude = 1;   
     int32 longitude = 2;
 }
 
+// Feature represents a named geographical location
 message Feature {
-    string name = 1;
-    Point location = 2;
+    string name = 1;      // Name of the feature (empty if unnamed)
+    Point location = 2;   
 }
