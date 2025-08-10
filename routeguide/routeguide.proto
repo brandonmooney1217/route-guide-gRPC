@@ -1,0 +1,20 @@
+syntax = "proto3";
+
+package routeguide;
+option go_package = "routeguide/routeguide";
+
+
+service RouteGuide {
+// Obtains feature at a given point
+    rpc GetFeature(Point) returns (Feature) {}
+}
+
+message Point {
+    int32 latitude = 1;
+    int32 longitude = 2;
+}
+
+message Feature {
+    string name = 1;
+    Point location = 2;
+}
