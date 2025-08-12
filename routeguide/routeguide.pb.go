@@ -21,6 +21,7 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+// Point represents a geographical coordinate pair
 type Point struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Latitude      int32                  `protobuf:"varint,1,opt,name=latitude,proto3" json:"latitude,omitempty"`
@@ -73,6 +74,7 @@ func (x *Point) GetLongitude() int32 {
 	return 0
 }
 
+// Feature represents a named geographical location
 type Feature struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Name          string                 `protobuf:"bytes,1,opt,name=name,proto3" json:"name,omitempty"`
@@ -125,6 +127,58 @@ func (x *Feature) GetLocation() *Point {
 	return nil
 }
 
+type Rectangle struct {
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	BottomLeftCorner *Point                 `protobuf:"bytes,1,opt,name=bottomLeftCorner,proto3" json:"bottomLeftCorner,omitempty"`
+	TopRightCorner   *Point                 `protobuf:"bytes,2,opt,name=topRightCorner,proto3" json:"topRightCorner,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
+}
+
+func (x *Rectangle) Reset() {
+	*x = Rectangle{}
+	mi := &file_routeguide_routeguide_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *Rectangle) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*Rectangle) ProtoMessage() {}
+
+func (x *Rectangle) ProtoReflect() protoreflect.Message {
+	mi := &file_routeguide_routeguide_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use Rectangle.ProtoReflect.Descriptor instead.
+func (*Rectangle) Descriptor() ([]byte, []int) {
+	return file_routeguide_routeguide_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *Rectangle) GetBottomLeftCorner() *Point {
+	if x != nil {
+		return x.BottomLeftCorner
+	}
+	return nil
+}
+
+func (x *Rectangle) GetTopRightCorner() *Point {
+	if x != nil {
+		return x.TopRightCorner
+	}
+	return nil
+}
+
 var File_routeguide_routeguide_proto protoreflect.FileDescriptor
 
 const file_routeguide_routeguide_proto_rawDesc = "" +
@@ -136,11 +190,15 @@ const file_routeguide_routeguide_proto_rawDesc = "" +
 	"\tlongitude\x18\x02 \x01(\x05R\tlongitude\"L\n" +
 	"\aFeature\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12-\n" +
-	"\blocation\x18\x02 \x01(\v2\x11.routeguide.PointR\blocation2D\n" +
+	"\blocation\x18\x02 \x01(\v2\x11.routeguide.PointR\blocation\"\x85\x01\n" +
+	"\tRectangle\x12=\n" +
+	"\x10bottomLeftCorner\x18\x01 \x01(\v2\x11.routeguide.PointR\x10bottomLeftCorner\x129\n" +
+	"\x0etopRightCorner\x18\x02 \x01(\v2\x11.routeguide.PointR\x0etopRightCorner2\x84\x01\n" +
 	"\n" +
 	"RouteGuide\x126\n" +
 	"\n" +
-	"GetFeature\x12\x11.routeguide.Point\x1a\x13.routeguide.Feature\"\x00B\x17Z\x15routeguide/routeguideb\x06proto3"
+	"GetFeature\x12\x11.routeguide.Point\x1a\x13.routeguide.Feature\"\x00\x12>\n" +
+	"\fListFeatures\x12\x15.routeguide.Rectangle\x1a\x13.routeguide.Feature\"\x000\x01B\x17Z\x15routeguide/routeguideb\x06proto3"
 
 var (
 	file_routeguide_routeguide_proto_rawDescOnce sync.Once
@@ -154,20 +212,25 @@ func file_routeguide_routeguide_proto_rawDescGZIP() []byte {
 	return file_routeguide_routeguide_proto_rawDescData
 }
 
-var file_routeguide_routeguide_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_routeguide_routeguide_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
 var file_routeguide_routeguide_proto_goTypes = []any{
-	(*Point)(nil),   // 0: routeguide.Point
-	(*Feature)(nil), // 1: routeguide.Feature
+	(*Point)(nil),     // 0: routeguide.Point
+	(*Feature)(nil),   // 1: routeguide.Feature
+	(*Rectangle)(nil), // 2: routeguide.Rectangle
 }
 var file_routeguide_routeguide_proto_depIdxs = []int32{
 	0, // 0: routeguide.Feature.location:type_name -> routeguide.Point
-	0, // 1: routeguide.RouteGuide.GetFeature:input_type -> routeguide.Point
-	1, // 2: routeguide.RouteGuide.GetFeature:output_type -> routeguide.Feature
-	2, // [2:3] is the sub-list for method output_type
-	1, // [1:2] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	0, // 1: routeguide.Rectangle.bottomLeftCorner:type_name -> routeguide.Point
+	0, // 2: routeguide.Rectangle.topRightCorner:type_name -> routeguide.Point
+	0, // 3: routeguide.RouteGuide.GetFeature:input_type -> routeguide.Point
+	2, // 4: routeguide.RouteGuide.ListFeatures:input_type -> routeguide.Rectangle
+	1, // 5: routeguide.RouteGuide.GetFeature:output_type -> routeguide.Feature
+	1, // 6: routeguide.RouteGuide.ListFeatures:output_type -> routeguide.Feature
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_routeguide_routeguide_proto_init() }
@@ -181,7 +244,7 @@ func file_routeguide_routeguide_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routeguide_routeguide_proto_rawDesc), len(file_routeguide_routeguide_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   3,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

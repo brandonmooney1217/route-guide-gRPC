@@ -5,7 +5,12 @@ option go_package = "routeguide/routeguide";
 
 // RouteGuide service provides geographical feature lookup functionality
 service RouteGuide {
+    // Obtains the feature at a given position.
     rpc GetFeature(Point) returns (Feature) {}
+
+    // Lists all features within given rectangle. Results are streamed
+    // instead of returned all at once
+    rpc ListFeatures(Rectangle) returns (stream Feature) {}
 }
 
 // Point represents a geographical coordinate pair
@@ -16,6 +21,11 @@ message Point {
 
 // Feature represents a named geographical location
 message Feature {
-    string name = 1;      // Name of the feature (empty if unnamed)
+    string name = 1;
     Point location = 2;   
+}
+
+message Rectangle {
+    Point bottomLeftCorner = 1;
+    Point topRightCorner = 2;
 }

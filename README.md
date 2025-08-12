@@ -54,18 +54,20 @@ In a separate terminal:
 go run client/client.go
 ```
 
-The client will connect to the server, request feature information for the Liberty Bell coordinates, and display the results.
+The client will connect to the server, request feature information for the Liberty Bell coordinates, then list all features within an East Coast rectangle.
 
 ## Service Definition
 
-The RouteGuide service currently provides one RPC method:
+The RouteGuide service provides two RPC methods:
 
 - `GetFeature(Point) returns (Feature)` - Retrieves feature information for given coordinates
+- `ListFeatures(Rectangle) returns (stream Feature)` - Streams all features within a geographical rectangle
 
 ### Message Types
 
 - `Point` - Represents geographical coordinates (latitude, longitude)
 - `Feature` - Contains a feature name and its location
+- `Rectangle` - Defines a geographical boundary with bottom-left and top-right corners
 
 ## Development
 
@@ -98,16 +100,19 @@ go build ./client
 When running the client, you should see output similar to:
 
 ```
-Liberty Bell
-Latitude: 395906000
-Longitude: -753506000
+Feature name: Liberty Bell, Latitude: 395906000, Longitude: -753506000
+Features in rectangle:
+- Liberty Bell at (395906000, -753506000)
+- Statue of Liberty at (405847500, -741301800)
+- Empire State Building at (407486500, -739885900)
+- Lincoln Memorial at (389030600, -770494800)
 ```
 
 ## Current Limitations
 
-- Only the `GetFeature` method is implemented
-- Server uses hardcoded in-memory data (Liberty Bell location)
+- Server uses hardcoded in-memory data (7 US landmarks)
 - No persistent storage
+- No authentication or authorization
 
 ## Dependencies
 

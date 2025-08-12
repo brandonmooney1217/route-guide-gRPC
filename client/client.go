@@ -38,6 +38,33 @@ func main() {
 	}
 
 	// Extract and display feature information
-	log.Printf("Feature name: %s, Latitude: %d, Longitude: %d", 
+	log.Printf("Feature name: %s, Latitude: %d, Longitude: %d",
 		feature.Name, feature.Location.Latitude, feature.Location.Longitude)
+
+	rect := &pb.Rectangle{
+		BottomLeftCorner: &pb.Point{
+			Latitude:  385000000,
+			Longitude: -780000000,
+		},
+		TopRightCorner: &pb.Point{
+			Latitude:  410000000,
+			Longitude: -735000000,
+		},
+	}
+
+	stream, err := client.ListFeatures(ctx, rect)
+
+	if err != nil {
+		log.Fatalf("ListFeature failed: %v", err)
+	}
+
+	log.Println("Features in rectangle:")
+	for {
+		feature, err = stream.Recv()
+		if err != nil {
+			break // End of stream (EOF is normal)
+		}
+		log.Printf("- %s at (%d, %d)", feature.Name, feature.Location.Latitude, feature.Location.Longitude)
+	}
+
 }
