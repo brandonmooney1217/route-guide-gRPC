@@ -21,6 +21,7 @@ const _ = grpc.SupportPackageIsVersion9
 const (
 	RouteGuide_GetFeature_FullMethodName   = "/routeguide.RouteGuide/GetFeature"
 	RouteGuide_ListFeatures_FullMethodName = "/routeguide.RouteGuide/ListFeatures"
+	RouteGuide_RecordRoute_FullMethodName  = "/routeguide.RouteGuide/RecordRoute"
 )
 
 // RouteGuideClient is the client API for RouteGuide service.
@@ -31,9 +32,14 @@ const (
 type RouteGuideClient interface {
 	// Obtains the feature at a given position.
 	GetFeature(ctx context.Context, in *Point, opts ...grpc.CallOption) (*Feature, error)
+	// A server-to-client streaming RPC
 	// Lists all features within given rectangle. Results are streamed
 	// instead of returned all at once
 	ListFeatures(ctx context.Context, in *Rectangle, opts ...grpc.CallOption) (grpc.ServerStreamingClient[Feature], error)
+	// A client-to-server streaming RPC
+	// Client sends a stream of points of its route
+	// and server returns a route summary
+	RecordRoute(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Point, RouteSummary], error)
 }
 
 type routeGuideClient struct {
@@ -73,6 +79,19 @@ func (c *routeGuideClient) ListFeatures(ctx context.Context, in *Rectangle, opts
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RouteGuide_ListFeaturesClient = grpc.ServerStreamingClient[Feature]
 
+func (c *routeGuideClient) RecordRoute(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Point, RouteSummary], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &RouteGuide_ServiceDesc.Streams[1], RouteGuide_RecordRoute_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[Point, RouteSummary]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RouteGuide_RecordRouteClient = grpc.ClientStreamingClient[Point, RouteSummary]
+
 // RouteGuideServer is the server API for RouteGuide service.
 // All implementations must embed UnimplementedRouteGuideServer
 // for forward compatibility.
@@ -81,9 +100,14 @@ type RouteGuide_ListFeaturesClient = grpc.ServerStreamingClient[Feature]
 type RouteGuideServer interface {
 	// Obtains the feature at a given position.
 	GetFeature(context.Context, *Point) (*Feature, error)
+	// A server-to-client streaming RPC
 	// Lists all features within given rectangle. Results are streamed
 	// instead of returned all at once
 	ListFeatures(*Rectangle, grpc.ServerStreamingServer[Feature]) error
+	// A client-to-server streaming RPC
+	// Client sends a stream of points of its route
+	// and server returns a route summary
+	RecordRoute(grpc.ClientStreamingServer[Point, RouteSummary]) error
 	mustEmbedUnimplementedRouteGuideServer()
 }
 
@@ -99,6 +123,9 @@ func (UnimplementedRouteGuideServer) GetFeature(context.Context, *Point) (*Featu
 }
 func (UnimplementedRouteGuideServer) ListFeatures(*Rectangle, grpc.ServerStreamingServer[Feature]) error {
 	return status.Errorf(codes.Unimplemented, "method ListFeatures not implemented")
+}
+func (UnimplementedRouteGuideServer) RecordRoute(grpc.ClientStreamingServer[Point, RouteSummary]) error {
+	return status.Errorf(codes.Unimplemented, "method RecordRoute not implemented")
 }
 func (UnimplementedRouteGuideServer) mustEmbedUnimplementedRouteGuideServer() {}
 func (UnimplementedRouteGuideServer) testEmbeddedByValue()                    {}
@@ -150,6 +177,13 @@ func _RouteGuide_ListFeatures_Handler(srv interface{}, stream grpc.ServerStream)
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RouteGuide_ListFeaturesServer = grpc.ServerStreamingServer[Feature]
 
+func _RouteGuide_RecordRoute_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RouteGuideServer).RecordRoute(&grpc.GenericServerStream[Point, RouteSummary]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RouteGuide_RecordRouteServer = grpc.ClientStreamingServer[Point, RouteSummary]
+
 // RouteGuide_ServiceDesc is the grpc.ServiceDesc for RouteGuide service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -167,6 +201,11 @@ var RouteGuide_ServiceDesc = grpc.ServiceDesc{
 			StreamName:    "ListFeatures",
 			Handler:       _RouteGuide_ListFeatures_Handler,
 			ServerStreams: true,
+		},
+		{
+			StreamName:    "RecordRoute",
+			Handler:       _RouteGuide_RecordRoute_Handler,
+			ClientStreams: true,
 		},
 	},
 	Metadata: "routeguide/routeguide.proto",

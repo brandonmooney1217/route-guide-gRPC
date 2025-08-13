@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"io"
 	"log"
 	"net"
 	pb "routeguide/routeguide"
@@ -16,13 +17,22 @@ type routeGuideServer struct {
 	savedFeatures []*pb.Feature // in-memory storage for geographical features
 }
 
+// findFeatureAtPoint checks if a point exists in the saved features list
+// Returns the feature if found, nil otherwise
+func (s *routeGuideServer) findFeatureAtPoint(point *pb.Point) *pb.Feature {
+	for _, feature := range s.savedFeatures {
+		if proto.Equal(feature.Location, point) {
+			return feature
+		}
+	}
+	return nil
+}
+
 // GetFeature retrieves a feature at the given geographical point
 // Returns the named feature if found, otherwise returns a feature with empty name
 func (s *routeGuideServer) GetFeature(_ context.Context, point *pb.Point) (*pb.Feature, error) {
-	for _, feature := range s.savedFeatures {
-		if proto.Equal(feature.Location, point) {
-			return feature, nil
-		}
+	if feature := s.findFeatureAtPoint(point); feature != nil {
+		return feature, nil
 	}
 	return &pb.Feature{Location: point}, nil
 }
@@ -36,6 +46,28 @@ func (s *routeGuideServer) ListFeatures(rect *pb.Rectangle, stream pb.RouteGuide
 		}
 	}
 	return nil
+}
+
+func (s *routeGuideServer) RecordRoute(stream pb.RouteGuide_RecordRouteServer) error {
+	var point_count, feature_count int32
+
+	for {
+		point, err := stream.Recv()
+		if err == io.EOF {
+			return stream.SendAndClose(&pb.RouteSummary{
+				PointCount:   point_count,
+				FeatureCount: feature_count,
+			})
+		}
+		if err != nil {
+			return err
+		}
+
+		point_count = point_count + 1
+		if s.findFeatureAtPoint(point) != nil {
+			feature_count = feature_count + 1
+		}
+	}
 }
 
 func isFeatureInRectangle(rect *pb.Rectangle, feature *pb.Feature) bool {

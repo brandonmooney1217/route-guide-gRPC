@@ -179,6 +179,58 @@ func (x *Rectangle) GetTopRightCorner() *Point {
 	return nil
 }
 
+type RouteSummary struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	PointCount    int32                  `protobuf:"varint,1,opt,name=point_count,json=pointCount,proto3" json:"point_count,omitempty"`
+	FeatureCount  int32                  `protobuf:"varint,2,opt,name=feature_count,json=featureCount,proto3" json:"feature_count,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *RouteSummary) Reset() {
+	*x = RouteSummary{}
+	mi := &file_routeguide_routeguide_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *RouteSummary) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*RouteSummary) ProtoMessage() {}
+
+func (x *RouteSummary) ProtoReflect() protoreflect.Message {
+	mi := &file_routeguide_routeguide_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use RouteSummary.ProtoReflect.Descriptor instead.
+func (*RouteSummary) Descriptor() ([]byte, []int) {
+	return file_routeguide_routeguide_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *RouteSummary) GetPointCount() int32 {
+	if x != nil {
+		return x.PointCount
+	}
+	return 0
+}
+
+func (x *RouteSummary) GetFeatureCount() int32 {
+	if x != nil {
+		return x.FeatureCount
+	}
+	return 0
+}
+
 var File_routeguide_routeguide_proto protoreflect.FileDescriptor
 
 const file_routeguide_routeguide_proto_rawDesc = "" +
@@ -193,12 +245,17 @@ const file_routeguide_routeguide_proto_rawDesc = "" +
 	"\blocation\x18\x02 \x01(\v2\x11.routeguide.PointR\blocation\"\x85\x01\n" +
 	"\tRectangle\x12=\n" +
 	"\x10bottomLeftCorner\x18\x01 \x01(\v2\x11.routeguide.PointR\x10bottomLeftCorner\x129\n" +
-	"\x0etopRightCorner\x18\x02 \x01(\v2\x11.routeguide.PointR\x0etopRightCorner2\x84\x01\n" +
+	"\x0etopRightCorner\x18\x02 \x01(\v2\x11.routeguide.PointR\x0etopRightCorner\"T\n" +
+	"\fRouteSummary\x12\x1f\n" +
+	"\vpoint_count\x18\x01 \x01(\x05R\n" +
+	"pointCount\x12#\n" +
+	"\rfeature_count\x18\x02 \x01(\x05R\ffeatureCount2\xc4\x01\n" +
 	"\n" +
 	"RouteGuide\x126\n" +
 	"\n" +
 	"GetFeature\x12\x11.routeguide.Point\x1a\x13.routeguide.Feature\"\x00\x12>\n" +
-	"\fListFeatures\x12\x15.routeguide.Rectangle\x1a\x13.routeguide.Feature\"\x000\x01B\x17Z\x15routeguide/routeguideb\x06proto3"
+	"\fListFeatures\x12\x15.routeguide.Rectangle\x1a\x13.routeguide.Feature\"\x000\x01\x12>\n" +
+	"\vRecordRoute\x12\x11.routeguide.Point\x1a\x18.routeguide.RouteSummary\"\x00(\x01B\x17Z\x15routeguide/routeguideb\x06proto3"
 
 var (
 	file_routeguide_routeguide_proto_rawDescOnce sync.Once
@@ -212,11 +269,12 @@ func file_routeguide_routeguide_proto_rawDescGZIP() []byte {
 	return file_routeguide_routeguide_proto_rawDescData
 }
 
-var file_routeguide_routeguide_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_routeguide_routeguide_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
 var file_routeguide_routeguide_proto_goTypes = []any{
-	(*Point)(nil),     // 0: routeguide.Point
-	(*Feature)(nil),   // 1: routeguide.Feature
-	(*Rectangle)(nil), // 2: routeguide.Rectangle
+	(*Point)(nil),        // 0: routeguide.Point
+	(*Feature)(nil),      // 1: routeguide.Feature
+	(*Rectangle)(nil),    // 2: routeguide.Rectangle
+	(*RouteSummary)(nil), // 3: routeguide.RouteSummary
 }
 var file_routeguide_routeguide_proto_depIdxs = []int32{
 	0, // 0: routeguide.Feature.location:type_name -> routeguide.Point
@@ -224,10 +282,12 @@ var file_routeguide_routeguide_proto_depIdxs = []int32{
 	0, // 2: routeguide.Rectangle.topRightCorner:type_name -> routeguide.Point
 	0, // 3: routeguide.RouteGuide.GetFeature:input_type -> routeguide.Point
 	2, // 4: routeguide.RouteGuide.ListFeatures:input_type -> routeguide.Rectangle
-	1, // 5: routeguide.RouteGuide.GetFeature:output_type -> routeguide.Feature
-	1, // 6: routeguide.RouteGuide.ListFeatures:output_type -> routeguide.Feature
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
+	0, // 5: routeguide.RouteGuide.RecordRoute:input_type -> routeguide.Point
+	1, // 6: routeguide.RouteGuide.GetFeature:output_type -> routeguide.Feature
+	1, // 7: routeguide.RouteGuide.ListFeatures:output_type -> routeguide.Feature
+	3, // 8: routeguide.RouteGuide.RecordRoute:output_type -> routeguide.RouteSummary
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -244,7 +304,7 @@ func file_routeguide_routeguide_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_routeguide_routeguide_proto_rawDesc), len(file_routeguide_routeguide_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   4,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
