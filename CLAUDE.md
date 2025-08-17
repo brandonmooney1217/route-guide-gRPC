@@ -4,11 +4,23 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a gRPC route guide service implementation in Go. The project consists of:
+This is a gRPC route guide service implementation in Go that demonstrates all four gRPC streaming patterns. The project consists of:
 
-- **Server** (`server/main.go`): Implements the RouteGuideServer with in-memory feature storage
+- **Server** (`server/main.go`): Implements the RouteGuideServer with in-memory feature storage and location-based chat
 - **Client** (`client/client.go`): Demonstrates all four RPC methods: GetFeature, ListFeatures, RecordRoute, and RouteChat
 - **Protocol Buffers** (`routeguide/`): Service definition and generated Go code
+
+## Project Structure
+```
+route-guide/
+├── server/main.go          # gRPC server implementation
+├── client/client.go        # Client demonstrating all RPC patterns
+├── routeguide/             # Generated protobuf code
+│   ├── routeguide.proto    # Service definition
+│   ├── routeguide.pb.go    # Generated message types
+│   └── routeguide_grpc.pb.go # Generated gRPC client/server code
+└── CLAUDE.md              # This file
+```
 
 ## Development Commands
 
@@ -21,9 +33,20 @@ go run server/main.go
 go run client/client.go
 ```
 
+### Testing and Building
+```bash
+# Build both server and client
+go build ./...
+
+# Test the complete flow
+go run server/main.go &     # Start server in background
+go run client/client.go     # Run client (will demonstrate all RPCs)
+kill %1                     # Stop the background server
+```
+
 ### Code Generation
 ```bash
-# Regenerate protobuf Go code after modifying .proto files
+# IMPORTANT: Regenerate protobuf Go code after modifying .proto files
 protoc --go_out=. --go_opt=paths=source_relative \
        --go-grpc_out=. --go-grpc_opt=paths=source_relative \
        routeguide/routeguide.proto
@@ -70,6 +93,21 @@ The service is defined in `routeguide/routeguide.proto` with four RPC methods de
 - Serialization pattern: `serialize(point)` converts coordinates to string keys for map storage
 - Synchronization: Channels (`waitc := make(chan struct{})`) coordinate goroutines in bidirectional streaming
 
+## Common Development Workflows
+
+### Adding a New RPC Method
+1. Define the RPC in `routeguide/routeguide.proto`
+2. Add corresponding message types if needed
+3. Run protobuf code generation (see commands above)
+4. Implement the method in `server/main.go`
+5. Add client demonstration in `client/client.go`
+
+### Modifying Server State
+- The server uses in-memory storage only - no persistence
+- `savedFeatures` contains the landmark data (initialized in `newServer()`)
+- `routeNotes` stores chat messages by location (requires mutex for thread safety)
+- All coordinate operations use the `serialize()` function for consistent string keys
+
 ## Important Notes
 
 - The server has 7 hardcoded US landmark coordinates in `newServer()`
@@ -80,6 +118,7 @@ The service is defined in `routeguide/routeguide.proto` with four RPC methods de
 - RouteChat implements a location-based chat system where messages are stored by serialized coordinates
 - Client code is organized with separate functions for each RPC method
 - Thread safety is handled via mutex for concurrent access to shared route notes storage
+- Server runs on port 50051 by default
 
 ## RouteChat Behavior
 
