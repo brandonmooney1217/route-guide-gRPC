@@ -9,14 +9,18 @@ service RouteGuide {
     rpc GetFeature(Point) returns (Feature) {}
 
     // A server-to-client streaming RPC
-    // Lists all features within given rectangle. Results are streamed
-    // instead of returned all at once
+    // Client sends a rectangel and the Server returns all features within given rectangle. 
+    // Results are returned as a instead of returned all at once
     rpc ListFeatures(Rectangle) returns (stream Feature) {}
 
     // A client-to-server streaming RPC
     // Client sends a stream of points of its route
     // and server returns a route summary
     rpc RecordRoute(stream Point) returns (RouteSummary){}
+
+    // A bi-directional streaming RPC that allows both client and server
+    // to receive route notes
+    rpc RouteChat(stream RouteNote) returns (stream RouteNote){}
 }
 
 // Point represents a geographical coordinate pair
@@ -39,4 +43,9 @@ message Rectangle {
 message RouteSummary {
     int32 point_count = 1;
     int32 feature_count = 2;
+}
+
+message RouteNote {
+    Point location = 1;
+    string message = 2;
 }

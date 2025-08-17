@@ -2,10 +2,12 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"io"
 	"log"
 	"net"
 	pb "routeguide/routeguide"
+	"sync"
 
 	"google.golang.org/grpc"
 	"google.golang.org/protobuf/proto"
@@ -14,7 +16,9 @@ import (
 // routeGuideServer implements the RouteGuideServer interface
 type routeGuideServer struct {
 	pb.UnimplementedRouteGuideServer
-	savedFeatures []*pb.Feature // in-memory storage for geographical features
+	savedFeatures []*pb.Feature              // in-memory storage for geographical features
+	routeNotes    map[string][]*pb.RouteNote // in-memory storage for map of route notes at each point; use serialized point as the key
+	mu            sync.Mutex                 // mutex for thread-safe access to routeNotes
 }
 
 // findFeatureAtPoint checks if a point exists in the saved features list
@@ -70,6 +74,49 @@ func (s *routeGuideServer) RecordRoute(stream pb.RouteGuide_RecordRouteServer) e
 	}
 }
 
+// Receives a stream of Route Notes, which is Point Message pair, and returns back
+// stream of all route notes at that location
+
+func serialize(point *pb.Point) string {
+	return fmt.Sprintf("%d,%d", point.Latitude, point.Longitude)
+}
+
+func (s *routeGuideServer) RouteChat(stream pb.RouteGuide_RouteChatServer) error {
+	for {
+
+		// 1. Process route note
+		note, err := stream.Recv()
+		if err == io.EOF {
+			return nil
+		}
+		if err != nil {
+			return err
+		}
+
+		// 2. serialize note using the location
+		key := serialize(note.Location)
+
+		// 3. Lock
+		s.mu.Lock()
+		// 4. add to route notes
+		s.routeNotes[key] = append(s.routeNotes[key], note)
+
+		// 5. create copy
+		rn := make([]*pb.RouteNote, len(s.routeNotes[key]))
+		copy(rn, s.routeNotes[key])
+		s.mu.Unlock()
+
+		// 6. write stream
+		for _, note := range rn {
+			if err := stream.Send(note); err != nil {
+				return err
+			}
+		}
+
+	}
+
+}
+
 func isFeatureInRectangle(rect *pb.Rectangle, feature *pb.Feature) bool {
 	lat := feature.Location.Latitude
 	lon := feature.Location.Longitude
@@ -112,6 +159,7 @@ func newServer() *routeGuideServer {
 				Location: &pb.Point{Latitude: 476203100, Longitude: -1221315600},
 			},
 		},
+		routeNotes: make(map[string][]*pb.RouteNote),
 	}
 }
 

@@ -22,6 +22,7 @@ const (
 	RouteGuide_GetFeature_FullMethodName   = "/routeguide.RouteGuide/GetFeature"
 	RouteGuide_ListFeatures_FullMethodName = "/routeguide.RouteGuide/ListFeatures"
 	RouteGuide_RecordRoute_FullMethodName  = "/routeguide.RouteGuide/RecordRoute"
+	RouteGuide_RouteChat_FullMethodName    = "/routeguide.RouteGuide/RouteChat"
 )
 
 // RouteGuideClient is the client API for RouteGuide service.
@@ -40,6 +41,9 @@ type RouteGuideClient interface {
 	// Client sends a stream of points of its route
 	// and server returns a route summary
 	RecordRoute(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[Point, RouteSummary], error)
+	// A bi-directional streaming RPC that allows both client and server
+	// to receive route notes
+	RouteChat(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[RouteNote, RouteNote], error)
 }
 
 type routeGuideClient struct {
@@ -92,6 +96,19 @@ func (c *routeGuideClient) RecordRoute(ctx context.Context, opts ...grpc.CallOpt
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RouteGuide_RecordRouteClient = grpc.ClientStreamingClient[Point, RouteSummary]
 
+func (c *routeGuideClient) RouteChat(ctx context.Context, opts ...grpc.CallOption) (grpc.BidiStreamingClient[RouteNote, RouteNote], error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	stream, err := c.cc.NewStream(ctx, &RouteGuide_ServiceDesc.Streams[2], RouteGuide_RouteChat_FullMethodName, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &grpc.GenericClientStream[RouteNote, RouteNote]{ClientStream: stream}
+	return x, nil
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RouteGuide_RouteChatClient = grpc.BidiStreamingClient[RouteNote, RouteNote]
+
 // RouteGuideServer is the server API for RouteGuide service.
 // All implementations must embed UnimplementedRouteGuideServer
 // for forward compatibility.
@@ -108,6 +125,9 @@ type RouteGuideServer interface {
 	// Client sends a stream of points of its route
 	// and server returns a route summary
 	RecordRoute(grpc.ClientStreamingServer[Point, RouteSummary]) error
+	// A bi-directional streaming RPC that allows both client and server
+	// to receive route notes
+	RouteChat(grpc.BidiStreamingServer[RouteNote, RouteNote]) error
 	mustEmbedUnimplementedRouteGuideServer()
 }
 
@@ -126,6 +146,9 @@ func (UnimplementedRouteGuideServer) ListFeatures(*Rectangle, grpc.ServerStreami
 }
 func (UnimplementedRouteGuideServer) RecordRoute(grpc.ClientStreamingServer[Point, RouteSummary]) error {
 	return status.Errorf(codes.Unimplemented, "method RecordRoute not implemented")
+}
+func (UnimplementedRouteGuideServer) RouteChat(grpc.BidiStreamingServer[RouteNote, RouteNote]) error {
+	return status.Errorf(codes.Unimplemented, "method RouteChat not implemented")
 }
 func (UnimplementedRouteGuideServer) mustEmbedUnimplementedRouteGuideServer() {}
 func (UnimplementedRouteGuideServer) testEmbeddedByValue()                    {}
@@ -184,6 +207,13 @@ func _RouteGuide_RecordRoute_Handler(srv interface{}, stream grpc.ServerStream) 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type RouteGuide_RecordRouteServer = grpc.ClientStreamingServer[Point, RouteSummary]
 
+func _RouteGuide_RouteChat_Handler(srv interface{}, stream grpc.ServerStream) error {
+	return srv.(RouteGuideServer).RouteChat(&grpc.GenericServerStream[RouteNote, RouteNote]{ServerStream: stream})
+}
+
+// This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
+type RouteGuide_RouteChatServer = grpc.BidiStreamingServer[RouteNote, RouteNote]
+
 // RouteGuide_ServiceDesc is the grpc.ServiceDesc for RouteGuide service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -205,6 +235,12 @@ var RouteGuide_ServiceDesc = grpc.ServiceDesc{
 		{
 			StreamName:    "RecordRoute",
 			Handler:       _RouteGuide_RecordRoute_Handler,
+			ClientStreams: true,
+		},
+		{
+			StreamName:    "RouteChat",
+			Handler:       _RouteGuide_RouteChat_Handler,
+			ServerStreams: true,
 			ClientStreams: true,
 		},
 	},

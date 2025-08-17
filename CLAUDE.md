@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 This is a gRPC route guide service implementation in Go. The project consists of:
 
 - **Server** (`server/main.go`): Implements the RouteGuideServer with in-memory feature storage
-- **Client** (`client/client.go`): Demonstrates calling both GetFeature and ListFeatures RPC methods
+- **Client** (`client/client.go`): Demonstrates all four RPC methods: GetFeature, ListFeatures, RecordRoute, and RouteChat
 - **Protocol Buffers** (`routeguide/`): Service definition and generated Go code
 
 ## Development Commands
@@ -41,28 +41,50 @@ go build ./...
 ## Architecture
 
 ### gRPC Service Definition
-The service is defined in `routeguide/routeguide.proto` with two RPC methods:
-- `GetFeature(Point) returns (Feature)` - Retrieves feature information for geographical coordinates
-- `ListFeatures(Rectangle) returns (stream Feature)` - Server streaming RPC that returns all features within a rectangle
+The service is defined in `routeguide/routeguide.proto` with four RPC methods demonstrating all gRPC streaming patterns:
+- `GetFeature(Point) returns (Feature)` - **Unary RPC**: Retrieves feature information for geographical coordinates
+- `ListFeatures(Rectangle) returns (stream Feature)` - **Server streaming RPC**: Returns all features within a rectangle
+- `RecordRoute(stream Point) returns (RouteSummary)` - **Client streaming RPC**: Client sends route points, server returns summary
+- `RouteChat(stream RouteNote) returns (stream RouteNote)` - **Bidirectional streaming RPC**: Location-based chat system
 
 ### Server Implementation
 - Uses pointer receivers for gRPC methods: `func (s *routeGuideServer) GetFeature(...)`
 - Stores features in-memory via `savedFeatures []*pb.Feature` field
-- Implements both `GetFeature` (unary RPC) and `ListFeatures` (server streaming RPC)
+- Stores route notes in-memory via `routeNotes map[string][]*pb.RouteNote` field (location-based chat storage)
+- Thread-safe access using `sync.Mutex` for concurrent RouteChat operations
+- Implements all four RPC patterns:
+  - **GetFeature**: Returns feature at given coordinates or empty feature
+  - **ListFeatures**: Streams features within rectangle boundaries
+  - **RecordRoute**: Counts points and features in client's route
+  - **RouteChat**: Location-based messaging - stores and retrieves messages by coordinates
 - Contains 7 hardcoded US landmarks for testing
 
 ### Key Go/gRPC Patterns
-- All protobuf message types use pointers (`*pb.Point`, `*pb.Feature`, `*pb.Rectangle`)
+- All protobuf message types use pointers (`*pb.Point`, `*pb.Feature`, `*pb.Rectangle`, `*pb.RouteNote`)
 - Server struct embeds `pb.UnimplementedRouteGuideServer` for default implementations
 - Uses `&` operator to create pointers for protobuf message literals
-- Unary gRPC methods return `(message, error)` tuples
-- Streaming gRPC methods use `stream.Send()` and return only `error`
-- Client streaming uses `stream.Recv()` in loop until EOF
+- **Unary RPC**: Methods return `(message, error)` tuples
+- **Server streaming**: Uses `stream.Send()` in loop, returns only `error`
+- **Client streaming**: Uses `stream.Recv()` in loop until EOF, calls `stream.SendAndClose()`
+- **Bidirectional streaming**: Uses both `stream.Send()` and `stream.Recv()`, coordinates with goroutines
+- Serialization pattern: `serialize(point)` converts coordinates to string keys for map storage
+- Synchronization: Channels (`waitc := make(chan struct{})`) coordinate goroutines in bidirectional streaming
 
 ## Important Notes
 
 - The server has 7 hardcoded US landmark coordinates in `newServer()`
 - Generated protobuf files (`*.pb.go`) should not be manually edited
-- Both `GetFeature` and `ListFeatures` are implemented
+- All four gRPC streaming patterns are implemented
 - Coordinates are stored in E7 format (latitude/longitude × 10^7)
 - `isFeatureInRectangle()` helper function validates if a point falls within rectangle boundaries
+- RouteChat implements a location-based chat system where messages are stored by serialized coordinates
+- Client code is organized with separate functions for each RPC method
+- Thread safety is handled via mutex for concurrent access to shared route notes storage
+
+## RouteChat Behavior
+
+The RouteChat RPC implements a location-based messaging system:
+1. When a client sends a message to coordinates (lat, lng), the server first sends back ALL previous messages sent to those same coordinates
+2. Then the server stores the new message at that location
+3. Multiple clients can "chat" by sending messages to the same geographical coordinates
+4. Messages are stored indefinitely in server memory using serialized coordinates as map keys
